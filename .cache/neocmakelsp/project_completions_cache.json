@@ -1,0 +1,85 @@
+{
+  "date": "2026-08-20T15:05:56.298834+04:00",
+  "data": {
+    "/Users/philingosling/Documents/android_prime/CMakeLists.txt": [
+      {
+        "label": "CMAKE_EXPORT_COMPILE_COMMANDS",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /Users/philingosling/Documents/android_prime/CMakeLists.txt"
+      },
+      {
+        "label": "CMAKE_CXX_STANDARD_REQUIRED",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /Users/philingosling/Documents/android_prime/CMakeLists.txt"
+      },
+      {
+        "label": "CMAKE_PREFIX_PATH",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /Users/philingosling/Documents/android_prime/CMakeLists.txt"
+      },
+      {
+        "label": "CMAKE_PREFIX_PATH",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /Users/philingosling/Documents/android_prime/CMakeLists.txt"
+      },
+      {
+        "label": "Qt6::Quick",
+        "kind": 6,
+        "detail": "Variable",
+        "documentation": "package from: Qt6"
+      },
+      {
+        "label": "Qt6_LIBRARIES",
+        "kind": 6,
+        "detail": "Variable",
+        "documentation": "package: Qt6"
+      },
+      {
+        "label": "Qt6_INCLUDE_DIRS",
+        "kind": 6,
+        "detail": "Variable",
+        "documentation": "package: Qt6"
+      },
+      {
+        "label": "Boost_LIBRARIES",
+        "kind": 6,
+        "detail": "Variable",
+        "documentation": "package: Boost"
+      },
+      {
+        "label": "Boost_INCLUDE_DIRS",
+        "kind": 6,
+        "detail": "Variable",
+        "documentation": "package: Boost"
+      },
+      {
+        "label": "OpenSSL_LIBRARIES",
+        "kind": 6,
+        "detail": "Variable",
+        "documentation": "package: OpenSSL"
+      },
+      {
+        "label": "OpenSSL_INCLUDE_DIRS",
+        "kind": 6,
+        "detail": "Variable",
+        "documentation": "package: OpenSSL"
+      },
+      {
+        "label": "Qt6Keychain_LIBRARIES",
+        "kind": 6,
+        "detail": "Variable",
+        "documentation": "package: Qt6Keychain"
+      },
+      {
+        "label": "Qt6Keychain_INCLUDE_DIRS",
+        "kind": 6,
+        "detail": "Variable",
+        "documentation": "package: Qt6Keychain"
+      }
+    ]
+  }
+}

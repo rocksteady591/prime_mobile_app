@@ -1,11 +1,20 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import android_prime
 
 
 Item {
     width: parent.width
     height: parent.height
+
+    Connections{
+        target: ApiClient
+
+        function onLoginSuccess(token){
+            stackView.push("ChatsScreen.qml")
+        }
+    }
 
     ColumnLayout{
         anchors.centerIn: parent
@@ -38,7 +47,7 @@ Item {
             leftPadding: 15
         }
         TextField{
-            id: asswordField
+            id: passwordField
             Layout.fillWidth: true
             placeholderText: "Пароль"
             echoMode: TextInput.Password // скрывает вводимый текст
@@ -74,9 +83,25 @@ Item {
                 verticalAlignment: Text.AlignVCenter   // Выравнивание текста по центру по вертикали
             }
             onClicked: {
-                console.log("Пытаемся войти...")
+                ApiClient.login(loginField.text, passwordField.text);
             }
         }
+        Text {
+                    id: errorText
+                    text: ApiClient.errorMessage
+                    color: "red"
+                    font.pixelSize: 14
+
+                    // Исправление: вместо anchors используем Layout-свойства
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter // Центрирование самого текста внутри компонента
+
+                    // Текст виден только тогда, когда он не пустой
+                    visible: text !== ""
+
+                    wrapMode: Text.WordWrap
+                }
         Text {
             text: "Нет аккаунта? Создать"
             color: "#8FA0C0"

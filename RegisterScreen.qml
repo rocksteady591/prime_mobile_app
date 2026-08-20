@@ -1,10 +1,19 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import android_prime
 
 Item {
     width: parent.width
     height: parent.height
+
+    Connections{
+        target: ApiClient
+
+        function onRegisterSuccess(){
+            stackView.pop()
+        }
+    }
 
     ColumnLayout {
         anchors.centerIn: parent
@@ -73,8 +82,26 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
+            onClicked: {
+                ApiClient.registerUser(regLoginField.text, regPasswordField.text, regPasswordConfirmField.text);
+            }
+            Text {
+                        id: errorText
+                        text: ApiClient.errorMessage
+                        color: "red"
+                        font.pixelSize: 14
 
-            onClicked: console.log("Отправка данных регистрации...")
+                        // Исправление: вместо anchors используем Layout-свойства
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignHCenter // Центрирование самого текста внутри компонента
+
+                        // Текст виден только тогда, когда он не пустой
+                        visible: text !== ""
+
+                        wrapMode: Text.WordWrap
+                    }
+
         }
 
         Text {
