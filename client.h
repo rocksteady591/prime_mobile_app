@@ -18,6 +18,7 @@
 #include <boost/system/detail/error_code.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/json.hpp>
+#include <cstddef>
 #include <memory>
 
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
@@ -28,18 +29,21 @@ class Client : public QObject, public std::enable_shared_from_this<Client>
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
+    Q_PROPERTY(QStringList find_user READ findUserRes NOTIFY findUserRes)
 public:
-    explicit Client(boost::asio::io_context& ioc, QObject *parent = nullptr);
+    explicit Client(boost::asio::io_context& ioc, boost::asio::ssl::context& ctx, QObject *parent = nullptr);
     Q_INVOKABLE void login(const QString& login, const QString& password);
     Q_INVOKABLE void registerUser(const QString& login, const QString& password, const QString& passwordConfirm);
+    Q_INVOKABLE void findUser(const QString& username);
 private:
     tcp::resolver resolver_;
-    boost::asio::ssl::context ctx_;
+    boost::asio::ssl::context& ctx_;
     boost::asio::ssl::stream<tcp::socket> stream_;
     boost::beast::flat_buffer buffer_;
     http::request<http::string_body> request_;
     http::response<http::string_body> response_;
     QString m_errorMessage;
+    QStringList find_user_;
 
 public:
     void run(const std::string& host, const unsigned short port, const std::string& target, int version, boost::json::object body);
@@ -48,7 +52,11 @@ public:
     void on_handshake(const boost::system::error_code& ec);
     void on_write(const boost::system::error_code& ec, std::size_t bytes_transfered);
     void on_read(const boost::system::error_code& ec, std::size_t bytes_transfered);
+    void on_find_user_write(const boost::system::error_code& ec, std::size_t bytes_transfered);
+    void on_find_user_read(const boost::system::error_code& ec, std::size_t bytes_transfered);
     QString errorMessage() const { return m_errorMessage; }
+    QStringList findUserRes() const { return find_user_;}
+    void on_login_or_register(const std::string& target, boost::json::object body);
 signals:
     void errorMessageChanged();
     void requestFailed(const QString& msg);
@@ -59,7 +67,7 @@ private slots:
     void handleFailed(const QString& msg);
     //void handleSuccess(const QString& token);
 private:
-    void saveToken(const QString& token);
+    //void saveTokenAndId(const QString& token, int id);
     void setError(const QString& msg);
 };
 

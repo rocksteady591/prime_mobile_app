@@ -5,26 +5,28 @@
 #include <boost/asio/write.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/http/field.hpp>
+#include <boost/beast/http/impl/read.hpp>
 #include <boost/beast/http/verb.hpp>
 #include <boost/beast/http/write.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/json/impl/serialize.hpp>
 #include <boost/json/object.hpp>
 #include <boost/json/parse.hpp>
+#include <boost/json/value.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <boost/beast/core/bind_handler.hpp>
 #include <boost/asio/ip/basic_resolver.hpp>
 #include <boost/hash2/sha2.hpp>
 #include <boost/hash2/digest.hpp>
-#include <qt6keychain/keychain.h>
+#include <cstdint>
 #include <QSettings>
+#include <QCoreApplication>
 #include <cstdlib>
 #include <exception>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <qt6keychain/keychain.h>
 
 
 namespace json = boost::json;
@@ -34,8 +36,8 @@ void fail(const boost::system::error_code& ec, char const* what){
     std::cerr << what << ": " << ec.message() << std::endl;
 }
 
-Client::Client(boost::asio::io_context& ioc, QObject *parent)
-    : QObject{parent}, resolver_(ioc), ctx_(boost::asio::ssl::context::tlsv12_client), stream_(ioc, ctx_)
+Client::Client(boost::asio::io_context& ioc, boost::asio::ssl::context& ctx, QObject *parent)
+    : QObject{parent}, resolver_(ioc), ctx_(ctx), stream_(ioc, ctx_)
 {
     connect(this, &Client::requestFailed, this, &Client::handleFailed);
     //connect(this, &Client::requestSuccess, this, &Client::handleSuccess);
@@ -52,7 +54,7 @@ Q_INVOKABLE void Client::login(const QString& login, const QString& password){
     boost::json::object body;
     body["login"] = login.toStdString();
     body["password_hash"] = boost::hash2::to_string(diget);
-    run("127.0.0.1", 8081, target, 11, body);
+    on_login_or_register(target, body);
 }
 Q_INVOKABLE void Client::registerUser(const QString& login, const QString& password, const QString& passwordConfirm){
     if(password != passwordConfirm){
@@ -66,7 +68,7 @@ Q_INVOKABLE void Client::registerUser(const QString& login, const QString& passw
     auto diget = h.result();
     body["login"] = login.toStdString();
     body["password_hash"] = boost::hash2::to_string(diget);
-    run("127.0.0.1", 8081, target, 11, body);
+    on_login_or_register(target, body);
 }
 
 void Client::run(const std::string &host, const unsigned short port, const std::string &target, int version, boost::json::object body)
@@ -109,18 +111,12 @@ void Client::on_handshake(const boost::system::error_code& ec){
     if(ec){
         fail(ec, "handshake");
     }
-    http::async_write(
-        stream_,
-        request_,
-        boost::beast::bind_front_handler(&Client::on_write, shared_from_this())
-    );
 }
 
 void Client::on_write(const boost::system::error_code& ec, std::size_t bytes_transfered){
     if(ec){
         fail(ec, "on write");
     }
-
     http::async_read(
         stream_,
         buffer_,
@@ -129,21 +125,106 @@ void Client::on_write(const boost::system::error_code& ec, std::size_t bytes_tra
     );
 }
 
+void Client::findUser(const QString& username){
+    if(username.isEmpty()){
+        std::cerr << "Username is empty" << std::endl;
+        find_user_ = QStringList{};
+        emit findUserRes();
+        return;
+    }
+    response_ = {};
+    json::object body_obj;
+    body_obj["user_name"] = username.toStdString();
+    request_.body() = json::serialize(body_obj);
+    std::string target = "/api/find_user";
+    request_.target(target);
+    request_.prepare_payload();
+    http::async_write(stream_, request_,
+        boost::beast::bind_front_handler(&Client::on_find_user_write, shared_from_this()));
+}
+
+void Client::on_find_user_write(const boost::system::error_code& ec, std::size_t bytes_transfered){
+    if(ec){
+        std::cerr << "on find user read: " << ec.message() << std::endl;
+        return;
+    }
+
+
+    http::async_read(stream_, buffer_, response_,
+        boost::beast::bind_front_handler(&Client::on_find_user_read, shared_from_this()));
+}
+void Client::on_login_or_register(const std::string& target, boost::json::object body){
+    http::async_write(
+        stream_,
+        request_,
+        boost::beast::bind_front_handler(&Client::on_write, shared_from_this())
+        );
+}
+
+void Client::on_find_user_read(const boost::system::error_code& ec, std::size_t bytes_transfered){
+    if(ec){
+        std::cerr << "on find user read: " << ec.message() << std::endl;
+        return;
+    }
+    if(response_.result_int() != 200){
+        std::cerr << "Find user failed" << std::endl;
+        QMetaObject::invokeMethod(this, [this]() {
+            find_user_ = QStringList{};
+            emit findUserRes();
+        }, Qt::QueuedConnection);
+        return;
+    }
+    std::string user_login;
+    std::string user_name;
+    int user_id;
+    try{
+        json::value body_val = boost::json::parse(response_.body());
+        json::object body_obj = body_val.as_object();
+        user_login = body_obj["user_login"].as_string();
+        user_name = body_obj["username"].as_string();
+        user_id = body_obj["user_id"].as_int64();
+    }catch(const std::exception& ec){
+        std::cerr << "data parse failed: " << ec.what() << std::endl;
+        QMetaObject::invokeMethod(this, [this]() {
+            find_user_ = QStringList{};
+            emit findUserRes();
+        }, Qt::QueuedConnection);
+        return;
+    }
+    std::cout << user_login << " : " << user_name << " : " << user_id << std::endl;
+
+    QMetaObject::invokeMethod(this, [this, user_login, user_name, user_id]{
+        std::string string_id = std::to_string(user_id);
+
+        QStringList newList;
+        newList.append(QString::fromStdString(user_login));
+        newList.append(QString::fromStdString(user_name));
+        newList.append(QString::fromStdString(string_id));
+
+        find_user_ = newList;
+        emit findUserRes();
+    }, Qt::QueuedConnection);
+
+}
+
 void Client::on_read(const boost::system::error_code& ec, std::size_t bytes_transfered){
     if(ec){
         fail(ec, "on read");
         emit requestFailed(QString("Ошибка чтения: %1").arg(QString::fromStdString(ec.message())));
         return;
     }
+    if(response_.result_int() != 200){
+        std::cerr << "Registration failed" << std::endl;
+        emit requestFailed(QString("Ошибка регистрации"));
+        return;
+    }
     std::string token;
-    std::string id;
     int user_id = 0;
     try{
         json::value body_val = json::parse(response_.body());
         json::object body_obj = body_val.as_object();
         token = body_obj["token"].as_string();
-        id = body_obj["user_id"].as_string();
-        user_id = std::stoi(id);
+        user_id = body_obj["user_id"].as_int64();
     }catch(const std::exception& e){
         std::cerr << "on read parsing error: " << e.what() << std::endl;
         emit requestFailed(QString("Ошибка парсинга: %1").arg(e.what()));
@@ -153,7 +234,7 @@ void Client::on_read(const boost::system::error_code& ec, std::size_t bytes_tran
         emit registerSuccess();
     }else if(request_.target() == "/api/login"){
         setError("");
-        saveToken(QString::fromStdString(token));
+        //saveTokenAndId(QString::fromStdString(token), user_id);
         emit loginSuccess(QString::fromStdString(token));
     }
 }
@@ -162,8 +243,13 @@ void Client::handleFailed(const QString& msg){
     setError(msg);
 }
 
-void Client::saveToken(const QString& token){
+/*void Client::saveTokenAndId(const QString& token, int id){
     auto job = new QKeychain::WritePasswordJob("PrimalRussTechnologies", this);
+    QCoreApplication::setOrganizationName("PrimalRussTechnologies");
+    QCoreApplication::setApplicationName("Prime");
+    QSettings settings;
+    settings.setValue("user_id", id);
+    settings.sync();
     job->setAutoDelete(true);
     job->setKey("authToken");
     job->setTextData(token);
@@ -178,7 +264,7 @@ void Client::saveToken(const QString& token){
 
     job->start();
 }
-
+*/
 void Client::setError(const QString& msg){
     if(m_errorMessage != msg){
         m_errorMessage = msg;

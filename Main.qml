@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
+import android_prime
 
 
 ApplicationWindow {
@@ -38,6 +39,18 @@ ApplicationWindow {
         id: stackView
         anchors.fill: parent
         initialItem: "LoginScreen.qml" // Первый экран при запуске
+    }
+
+    Component.onCompleted: {
+        var token = ApiWebsocket.get_token();
+        ApiWebsocket.set_token(token);
+        ApiWebsocket.run("127.0.0.1", "9000");
+        if (token !== "") {
+            console.log("Токен найден, переходим к чатам!")
+            stackView.replace("ChatsScreen.qml")
+        } else {
+            console.log("Токен не найден, остаемся на экране входа.")
+        }
     }
 
 

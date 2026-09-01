@@ -5,8 +5,10 @@
 #include <boost/asio.hpp>
 #include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
+#include <boost/asio/ssl/context.hpp>
 #include <boost/beast.hpp>
 #include "client.h"
+#include "websocket.h"
 #include <memory>
 #include <thread>
 
@@ -24,15 +26,19 @@ int main(int argc, char *argv[])
     std::thread ioc_thread([&ioc]() {
         ioc.run();
     });
-    auto apiClient = std::make_shared<Client>(ioc);
+    boost::asio::ssl::context ctx{boost::asio::ssl::context::tlsv12_client};
+    auto apiClient = std::make_shared<Client>(ioc, ctx);
+    apiClient.get()->run("127.0.0.1", 8081, "/", 11, {});
+    auto apiWebsocket = std::make_shared<Websocket>(ioc, ctx);
     qmlRegisterSingletonInstance("android_prime", 1, 0, "ApiClient", apiClient.get());
-
+    qmlRegisterSingletonInstance("android_prime", 1, 0, "ApiWebsocket", apiWebsocket.get());
     QObject::connect(
         &engine,
         &QQmlApplicationEngine::objectCreationFailed,
         &app,
         []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
+
     engine.loadFromModule("android_prime", "Main");
     int result = QGuiApplication::exec();
     work_guard.reset();

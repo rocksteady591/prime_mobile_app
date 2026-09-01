@@ -15,16 +15,14 @@ Item {
             anchors.fill: parent
             spacing: 0
 
-            // ==========================================
-            // 1. ХЕДЕР (Верхняя панель)
-            // ==========================================
+            //ХЕДЕР
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 60 // Исправлено: preferredHeight (две буквы 'r')
+                Layout.preferredHeight: 60
                 color: "#1C2333"
 
                 RowLayout {
-                    anchors.fill: parent   // Исправлено: anchors.fill (убрана лишняя 'l')
+                    anchors.fill: parent
                     anchors.leftMargin: 20
                     anchors.rightMargin: 20
 
@@ -35,7 +33,20 @@ Item {
                         font.bold: true
                     }
 
-                    Item { Layout.fillWidth: true }
+                    TextField{
+                        id: userAndChatsSearch
+                        Layout.fillWidth: true
+                        placeholderText: "Поиск чатов и пользователей"
+                        color: "white"
+                        placeholderTextColor: "#8FA0C0"
+                        background: Rectangle{
+                            color: "#1C2334"
+                            radius: 15
+                            implicitHeight: 40
+                        }
+                        anchors.centerIn: parent
+                    }
+
 
                     Button {
                         Layout.preferredWidth: 40
@@ -51,14 +62,13 @@ Item {
                         }
                         onClicked: {
                             console.log("Кнопка поиска нажата")
+                            stackView.push("SearchScreen.qml")
                         }
                     }
                 }
-            } // <--- Хедер здесь корректно закрывается
+            }
 
-            // ==========================================
-            // 2. СПИСОК ЧАТОВ (Теперь на одном уровне с хедером)
-            // ==========================================
+            //СПИСОК ЧАТОВ
             ListView {
                 Layout.fillWidth: true
                 Layout.fillHeight: true // Забирает всё оставшееся пространство посередине
@@ -142,11 +152,9 @@ Item {
                         }
                     }
                 }
-            } // <--- Список здесь закрывается
+            }
 
-            // ==========================================
-            // 3. НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (Футер)
-            // ==========================================
+            //НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (Футер)
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 65
@@ -183,7 +191,7 @@ Item {
                         }
                     }
                 }
-            } // <--- Футер здесь закрывается
+            }
 
         } // Закрытие главного ColumnLayout
     }
