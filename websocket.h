@@ -30,9 +30,9 @@ public:
     void on_connect(const beast::error_code& ec, tcp::resolver::results_type::endpoint_type ep);
     void on_ssl_handshake(const beast::error_code& ec);
     void on_handhsake(const beast::error_code& ec);
-    Q_INVOKABLE QString get_token() const;
+    //Q_INVOKABLE QString get_token() const;
     //Q_INVOKABLE void send_message(const QString& message);
-    Q_INVOKABLE void set_token(const QString& token);
+    //Q_INVOKABLE void set_token(const QString& token);
 private:
     tcp::resolver resolver_;
     beast::websocket::stream<ssl::stream<beast::tcp_stream>> ws_;

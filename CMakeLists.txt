@@ -17,11 +17,31 @@ list(APPEND CMAKE_IGNORE_PATH "/opt/homebrew")
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
 
 # 3. Принудительно ставим Android-версию Qt на самое первое место в поиске
-list(PREPEND CMAKE_PREFIX_PATH "/Users/philingosling/Qt/6.10.0/android_arm64_v8a")
+list(PREPEND CMAKE_PREFIX_PATH "/Users/philingosling/Qt/6.11.1/android_arm64_v8a")
+
+# 4. ОБЯЗАТЕЛЬНО для кросс-компиляции Qt6: путь к «хостовой» (macOS) сборке Qt той же
+#    версии. Он нужен, чтобы Qt мог запускать на маке moc/rcc/qmlcachegen/androiddeployqt —
+#    эти инструменты должны выполняться на хосте, а не в виде Android-бинарников.
+#    Без этой переменной find_package(Qt6 ...) под Android-тулчейном либо упадёт с
+#    ошибкой "You need to set QT_HOST_PATH", либо соберётся без части функциональности.
+#    Проверьте точное имя папки у себя: ls /Users/philingosling/Qt/6.10.0/
+if(NOT DEFINED QT_HOST_PATH)
+    set(QT_HOST_PATH "/Users/philingosling/Qt/6.11.1/macos" CACHE PATH "Host Qt installation for cross-building")
+endif()
+
+# 5. SDK и NDK нужны Qt отдельно от Conan — это Qt-переменные, свой tools.android:ndk_path
+#    Conan сюда не прокидывает. Без них не появятся цели apk/aab и androiddeployqt не
+#    сможет собрать пакет (aapt2, android.jar, build-tools и т.д. берутся из SDK).
+if(NOT DEFINED ANDROID_SDK_ROOT)
+    set(ANDROID_SDK_ROOT "/Users/philingosling/Library/Android/sdk" CACHE PATH "Android SDK root")
+endif()
+if(NOT DEFINED ANDROID_NDK_ROOT)
+    set(ANDROID_NDK_ROOT "/Users/philingosling/Library/Android/sdk/ndk/27.2.12479018" CACHE PATH "Android NDK root")
+endif()
 
 # Поиск зависимостей через Conan (CMakeDeps)
 find_package(Qt6 REQUIRED COMPONENTS Quick)
-qt_standard_project_setup(REQUIRES 6.10)
+qt_standard_project_setup(REQUIRES 6.11)
 
 find_package(Boost REQUIRED COMPONENTS json log thread)
 find_package(OpenSSL REQUIRED)

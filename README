@@ -1,0 +1,8 @@
+установка зависимостей
+conan install . --output-folder=build/android --build=missing -pr:b default -pr:h android_armv8 --build="boost*"
+
+сборка
+cmake --preset conan-release/debug
+
+билд 
+cmake --build --preset conan-release/debug

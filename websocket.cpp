@@ -9,7 +9,6 @@
 #include <QEventLoop>
 #include <boost/beast/websocket/rfc6455.hpp>
 #include <boost/beast/websocket/stream_base.hpp>
-#include <qt6keychain/keychain.h>
 #include <openssl/tls1.h>
 #include <chrono>
 #include <iostream>
@@ -30,10 +29,10 @@ void Websocket::run(const QString& host, const QString& port){
     resolver_.async_resolve(host_, port.toStdString(), beast::bind_front_handler(&Websocket::on_resolve, shared_from_this()));
 }
 
-void Websocket::set_token(const QString& token){
+/*void Websocket::set_token(const QString& token){
     token_ = token;
     std::cout << "Token set token: " << token_.toStdString() << std::endl;
-}
+}*/
 
 void Websocket::on_resolve(const beast::error_code& ec, tcp::resolver::results_type results){
     if(ec){
@@ -62,7 +61,7 @@ void Websocket::on_connect(const beast::error_code& ec, tcp::resolver::results_t
     );
 }
 
-QString Websocket::get_token() const {
+/*QString Websocket::get_token() const {
     QKeychain::ReadPasswordJob job("PrimalRussTechnologies");
         job.setKey("authToken");
 
@@ -82,7 +81,7 @@ QString Websocket::get_token() const {
         loop.exec(); // Блокируем выполнение на микросекунды до получения данных из хранилища
 
         return tokenResult;
-}
+}*/
 
 void Websocket::on_ssl_handshake(const beast::error_code& ec){
     if(ec){
